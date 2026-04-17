@@ -1,0 +1,189 @@
+﻿{% extends "library/base.html" %}
+
+{% block title %}การยืมของฉัน - Theparak Library{% endblock %}
+
+{% block content %}
+<div class="container-lg py-5">
+    <!-- Page Header -->
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="fw-bold mb-2 text-white">
+                        <i class="fas fa-bookmark"></i> การยืมของฉัน
+                    </h1>
+                    <p class="text-white">ติดตามหนังสือที่ยืมและวันครบกำหนด</p>
+                </div>
+                <a href="{% url 'library:browse' %}" class="btn btn-outline-light">
+                    <i class="fas fa-plus-circle"></i> ยืมหนังสือเพิ่ม
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Borrowings -->
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h3 class="fw-bold mb-4 text-white">
+                <i class="fas fa-hourglass-half text-warning"></i> กำลังยืมอยู่
+            </h3>
+
+            {% if active_borrowings %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-dark">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="fas fa-book"></i> ชื่อหนังสือ</th>
+                                <th><i class="fas fa-user"></i> ผู้แต่ง</th>
+                                <th><i class="fas fa-calendar"></i> วันที่ยืม</th>
+                                <th><i class="fas fa-calendar-times"></i> วันครบกำหนด</th>
+                                <th><i class="fas fa-hourglass"></i> จำนวนวัน</th>
+                                <th><i class="fas fa-coins"></i> ค่าปรับ</th>
+                                <th><i class="fas fa-status"></i> สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for borrowing in active_borrowings %}
+                            <tr class="{% if borrowing.is_overdue %}table-danger{% else %}table-warning{% endif %}">
+                                <td>
+                                    <strong>{{ borrowing.book.title }}</strong>
+                                </td>
+                                <td>
+                                    {% for author in borrowing.book.authors.all %}
+                                        {{ author.first_name }} {{ author.last_name }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        ไม่ทราบ
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ borrowing.borrow_date|date:"d M Y" }}
+                                </td>
+                                <td>
+                                    <strong>{{ borrowing.due_date|date:"d M Y" }}</strong>
+                                </td>
+                                <td>
+                                    {{ borrowing.days_borrowed }} วัน
+                                </td>
+                                <td>
+                                    {% if borrowing.penalty > 0 %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-exclamation-triangle"></i> ฿{{ borrowing.penalty }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-success">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if borrowing.is_overdue %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-exclamation-circle"></i> เกินกำหนด
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-check"></i> ตรงเวลา
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Borrowing History -->
+    <div class="row">
+        <div class="col-md-12">
+            <h3 class="fw-bold mb-4 text-white">
+                <i class="fas fa-history text-success"></i> ประวัติการยืม
+            </h3>
+
+            {% if returned_borrowings %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-dark">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="fas fa-book"></i> ชื่อหนังสือ</th>
+                                <th><i class="fas fa-user"></i> ผู้แต่ง</th>
+                                <th><i class="fas fa-calendar"></i> วันที่ยืม</th>
+                                <th><i class="fas fa-calendar-check"></i> วันที่คืน</th>
+                                <th><i class="fas fa-hourglass"></i> ระยะเวลา</th>
+                                <th><i class="fas fa-check-circle"></i> สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for borrowing in returned_borrowings %}
+                            <tr class="table-secondary">
+                                <td>
+                                    <strong>{{ borrowing.book.title }}</strong>
+                                </td>
+                                <td>
+                                    {% for author in borrowing.book.authors.all %}
+                                        {{ author.first_name }} {{ author.last_name }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        ไม่ทราบ
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ borrowing.borrow_date|date:"d M Y" }}
+                                </td>
+                                <td>
+                                    {{ borrowing.return_date|date:"d M Y" }}
+                                </td>
+                                <td>
+                                    {{ borrowing.days_borrowed }} วัน
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> คืนแล้ว
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="row mt-4">
+        <div class="col-md-12 text-center">
+            <a href="{% url 'library:index' %}" class="btn btn-outline-light">
+                <i class="fas fa-arrow-left text-white"></i> กลับหน้าหลัก
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-responsive {
+        border-radius: 0.5rem !important;
+        overflow: hidden;
+    }
+    
+    .table-dark {
+        border-radius: 0.5rem !important;
+    }
+    
+    .table-dark th {
+        background-color: #2d3748 !important;
+        color: white;
+    }
+    
+    .table-dark td {
+        border-color: #444;
+    }
+    
+    .alert {
+        border-radius: 0.5rem !important;
+    }
+    
+    .card {
+        border-radius: 0.75rem !important;
+    }
+</style>
+{% endblock %}

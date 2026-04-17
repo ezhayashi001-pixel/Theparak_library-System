@@ -1,0 +1,335 @@
+﻿{% extends "library/base.html" %}
+
+{% block title %}เพิ่มหนังสือใหม่ - Theparak Library{% endblock %}
+
+{% block content %}
+<!-- Add Book Header -->
+<section class="browse-header py-4 bg-light border-bottom">
+    <div class="container-lg">
+        <h1 class="mb-2"><i class="fas fa-plus"></i> เพิ่มหนังสือใหม่</h1>
+        <p class="text-muted">เพิ่มหนังสือใหม่เข้าสู่คอลเลกชันห้องสมุด</p>
+    </div>
+</section>
+
+<div class="container-lg py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-edit"></i> รายละเอียดหนังสือ</h5>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation">
+                        {% csrf_token %}
+                        
+                        <!-- Title -->
+                        <div class="mb-3">
+                            <label for="id_title" class="form-label fw-bold">ชื่อหนังสือ *</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.title.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Authors -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">ผู้แต่ง * <small class="text-muted">(คลิกเพื่อเลือก/ยกเลิก)</small></label>
+                            
+                            <!-- Selected Authors Display -->
+                            <div id="selectedAuthorsDisplay" class="mb-3 p-2 bg-light rounded border" style="display: none;">
+                                <small class="text-muted fw-bold">ผู้แต่งที่เลือก:</small>
+                                <div id="selectedAuthorsBadges" class="mt-2"></div>
+                            </div>
+
+                            <!-- Authors List -->
+                            <div class="card border-0 bg-light">
+                                <div class="card-header bg-light fw-bold small">
+                                    ผู้แต่งที่มีอยู่ (คลิกเพื่อเพิ่ม)
+                                </div>
+                                <div class="card-body" style="max-height: 250px; overflow-y: auto;">
+                                    <div id="authorsList" class="d-flex flex-wrap gap-2">
+                                        {% for author in form.authors.field.queryset %}
+                                            <button type="button" class="btn btn-outline-primary btn-sm author-btn" 
+                                                    data-author-id="{{ author.id }}" 
+                                                    data-author-name="{{ author.first_name }} {{ author.last_name }}">
+                                                {{ author.first_name }} {{ author.last_name }}
+                                            </button>
+                                        {% empty %}
+                                            <p class="text-muted small mb-0">ยังไม่มีผู้แต่ง <a href="{% url 'library:add_author' %}">เพิ่มผู้แต่ง</a></p>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden field to store selected authors -->
+                            <input type="hidden" id="selectedAuthorsInput" name="authors" value="">
+                            
+                            <div id="authorError" class="invalid-feedback d-block" style="display: none;">
+                                กรุณาเลือกผู้แต่งอย่างน้อย 1 คน
+                            </div>
+                        </div>
+
+                        <!-- Add New Author Section -->
+                        <div class="card mb-4 border-0 bg-light">
+                            <div class="card-header bg-warning text-dark fw-bold">
+                                <i class="fas fa-user-plus"></i> ไม่พบผู้แต่งที่ต้องการ?
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-3 text-muted">คลิกปุ่มด้านล่างเพื่อเพิ่มผู้แต่งใหม่เข้าสู่ระบบ</p>
+                                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addAuthorModal">
+                                    <i class="fas fa-plus"></i> เพิ่มผู้แต่ง
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="mb-3">
+                            <label for="id_category" class="form-label fw-bold">หมวดหมู่ *</label>
+                            {{ form.category }}
+                            <small class="text-muted">เลือกหมวดหมู่ <a href="{% url 'library:add_category' %}" class="btn-link">เพิ่มหมวดหมู่ใหม่</a></small>
+                            {% if form.category.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.category.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label fw-bold">คำอธิบาย *</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.description.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- รูปปกหนังสือ -->
+                        <div class="mb-3">
+                            <label for="id_cover_image" class="form-label fw-bold">รูปปกหนังสือ</label>
+                            {{ form.cover_image }}
+                            <small class="text-muted">อัปโหลดรูปปกหนังสือในรูปแบบ JPG, PNG หรือ GIF</small>
+                            {% if form.cover_image.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.cover_image.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- วันที่พิมพ์ -->
+                        <div class="mb-3">
+                            <label for="id_publication_date" class="form-label fw-bold">วันที่พิมพ์</label>
+                            {{ form.publication_date }}
+                            {% if form.publication_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.publication_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Availability -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">สถานะ</label>
+                            <div class="form-check">
+                                {{ form.is_available }}
+                                <label class="form-check-label" for="id_is_available">
+                                    พร้อมให้ยืม
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-grid gap-2 d-sm-flex justify-content-end mt-4">
+                            <a href="{% url 'library:browse' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> ยกเลิก
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> เพิ่มหนังสือ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Author Modal -->
+<div class="modal fade" id="addAuthorModal" tabindex="-1" aria-labelledby="addAuthorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold" id="addAuthorModalLabel">
+                    <i class="fas fa-user-plus"></i> เพิ่มผู้แต่งใหม่
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="modalFirstName" class="form-label fw-bold">ชื่อ *</label>
+                    <input type="text" class="form-control" id="modalFirstName" placeholder="กรอกชื่อ">
+                </div>
+                <div class="mb-3">
+                    <label for="modalLastName" class="form-label fw-bold">นามสกุล *</label>
+                    <input type="text" class="form-control" id="modalLastName" placeholder="กรอกนามสกุล">
+                </div>
+                <div id="authorStatusMessage" class="mt-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-warning" onclick="addNewAuthor()">
+                    <i class="fas fa-save"></i> เพิ่มผู้แต่ง
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .invalid-feedback {
+        color: #dc3545;
+    }
+
+    .form-check-input {
+        width: 1.25em;
+        height: 1.25em;
+        margin-top: 0.3em;
+    }
+</style>
+
+<script>
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    function addNewAuthor() {
+        const firstName = document.getElementById('modalFirstName').value.trim();
+        const lastName = document.getElementById('modalLastName').value.trim();
+        const statusDiv = document.getElementById('authorStatusMessage');
+
+        if (!firstName || !lastName) {
+            statusDiv.innerHTML = '<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-circle"></i> First name and last name are required!</div>';
+            return;
+        }
+
+        // Send request to create author
+        fetch('{% url "library:create_author_api" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                first_name: firstName,
+                last_name: lastName
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                statusDiv.innerHTML = '<div class="alert alert-success" role="alert"><i class="fas fa-check-circle"></i> Author added successfully!</div>';
+                
+                // Clear the form
+                document.getElementById('modalFirstName').value = '';
+                document.getElementById('modalLastName').value = '';
+                
+                // Reload the page after 1 second
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                statusDiv.innerHTML = '<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-circle"></i> ' + (data.message || 'Error adding author') + '</div>';
+            }
+        })
+        .catch(error => {
+            statusDiv.innerHTML = '<div class="alert alert-danger" role="alert"><i class="fas fa-exclamation-circle"></i> Error: ' + error + '</div>';
+        });
+    }
+
+    // Handle author selection
+    let selectedAuthors = {};
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Attach click listeners to all author buttons
+        const authorBtns = document.querySelectorAll('.author-btn');
+        authorBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const authorId = this.getAttribute('data-author-id');
+                const authorName = this.getAttribute('data-author-name');
+                
+                if (selectedAuthors[authorId]) {
+                    // Remove author if already selected
+                    delete selectedAuthors[authorId];
+                    this.classList.remove('btn-primary');
+                    this.classList.add('btn-outline-primary');
+                } else {
+                    // Add author
+                    selectedAuthors[authorId] = authorName;
+                    this.classList.remove('btn-outline-primary');
+                    this.classList.add('btn-primary');
+                }
+                
+                updateSelectedAuthorsDisplay();
+                updateHiddenField();
+            });
+        });
+
+        // Handle form submission
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            if (Object.keys(selectedAuthors).length === 0) {
+                e.preventDefault();
+                document.getElementById('authorError').style.display = 'block';
+                return false;
+            }
+            document.getElementById('authorError').style.display = 'none';
+        });
+    });
+
+    function updateSelectedAuthorsDisplay() {
+        const displayDiv = document.getElementById('selectedAuthorsDisplay');
+        const badgesDiv = document.getElementById('selectedAuthorsBadges');
+        badgesDiv.innerHTML = '';
+        
+        if (Object.keys(selectedAuthors).length === 0) {
+            displayDiv.style.display = 'none';
+            return;
+        }
+
+        displayDiv.style.display = 'block';
+        
+        Object.entries(selectedAuthors).forEach(([authorId, authorName]) => {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-primary p-2 me-2 mb-2 d-inline-flex align-items-center gap-2';
+            badge.innerHTML = `
+                ${authorName}
+                <button type="button" class="btn-close btn-close-white" style="font-size: 0.75rem;" onclick="removeAuthor('${authorId}')"></button>
+            `;
+            badgesDiv.appendChild(badge);
+        });
+    }
+
+    function removeAuthor(authorId) {
+        delete selectedAuthors[authorId];
+        const btn = document.querySelector(`[data-author-id="${authorId}"]`);
+        if (btn) {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-primary');
+        }
+        updateSelectedAuthorsDisplay();
+        updateHiddenField();
+    }
+
+    function updateHiddenField() {
+        const authorIds = Object.keys(selectedAuthors);
+        document.getElementById('selectedAuthorsInput').value = authorIds.join(',');
+    }
+</script>
+{% endblock %}

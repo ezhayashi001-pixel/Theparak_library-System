@@ -1,0 +1,456 @@
+﻿{% extends "library/base.html" %}
+
+{% block title %}รายชื่อสมาชิก - Theparak Library{% endblock %}
+
+{% block content %}
+<div class="container-lg py-5">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="fw-bold mb-2 text-white">
+                        <i class="fas fa-users"></i> จัดการสมาชิก
+                    </h1>
+                    <p class="text-white">ดูและจัดการสมาชิกห้องสมุดทั้งหมด</p>
+                </div>
+                <div>
+                    <a href="{% url 'library:index' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> กลับหน้าหลัก
+                    </a>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                        <i class="fas fa-user-plus"></i> เพิ่มสมาชิก
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm bg-primary text-white border-0 rounded-lg">
+                <div class="card-body">
+                    <h6 class="card-title text-dark mb-2">สมาชิกทั้งหมด</h6>
+                    <h3 class="fw-bold text-dark mb-0">{{ total_members }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm bg-warning text-dark border-0 rounded-lg">
+                <div class="card-body">
+                    <h6 class="card-title text-dark mb-2">ผู้ยืมที่ใช้งานอยู่</h6>
+                    <h3 class="fw-bold text-dark mb-0">{{ active_borrowers }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm bg-danger text-white border-0 rounded-lg">
+                <div class="card-body">
+                    <h6 class="card-title text-dark mb-2">ค่าปรับทั้งหมด</h6>
+                    <h3 class="fw-bold text-dark mb-0">฿{{ total_penalties }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-body p-4">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="search" class="form-label fw-bold">ค้นหาสมาชิก</label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="search" 
+                                name="search" 
+                                placeholder="รหัสนักเรียน, ชื่อ, หรืออีเมล..."
+                                value="{{ search_query }}"
+                            >
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sort" class="form-label fw-bold">เรียงตาม</label>
+                            <select class="form-select" id="sort" name="sort">
+                                <option value="username" {% if sort_by == 'username' %}selected{% endif %}>รหัสนักเรียน (ก-ฮ)</option>
+                                <option value="-username" {% if sort_by == '-username' %}selected{% endif %}>รหัสนักเรียน (ฮ-ก)</option>
+                                <option value="first_name" {% if sort_by == 'first_name' %}selected{% endif %}>ชื่อ (ก-ฮ)</option>
+                                <option value="last_name" {% if sort_by == 'last_name' %}selected{% endif %}>นามสกุล (ก-ฮ)</option>
+                                <option value="email" {% if sort_by == 'email' %}selected{% endif %}>อีเมล (ก-ฮ)</option>
+                                <option value="-date_joined" {% if sort_by == '-date_joined' %}selected{% endif %}>เพิ่มล่าสุด</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="fas fa-search"></i> ค้นหา
+                            </button>
+                            <a href="{% url 'library:member_list' %}" class="btn btn-outline-secondary flex-grow-1">
+                                <i class="fas fa-redo"></i> รีเซต
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Members Table -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-body p-4">
+                    {% if members %}
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th><i class="fas fa-user"></i> รหัสนักเรียน</th>
+                                        <th><i class="fas fa-info-circle"></i> ชื่อ</th>
+                                        <th><i class="fas fa-info-circle"></i> นามสกุล</th>
+                                        <th><i class="fas fa-envelope"></i> อีเมล</th>
+                                        <th><i class="fas fa-calendar"></i> วันที่เข้าร่วม</th>
+                                        <th><i class="fas fa-details"></i> รายละเอียด</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for member in members %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ member.username }}</strong>
+                                        </td>
+                                        <td>{{ member.first_name|default:"—" }}</td>
+                                        <td>{{ member.last_name|default:"—" }}</td>
+                                        <td>{{ member.email|default:"—" }}</td>
+                                        <td>{{ member.date_joined|date:"d M Y" }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#memberModal{{ member.id }}">
+                                                    <i class="fas fa-eye"></i> ดู
+                                                </button>
+                                                <button class="btn btn-danger delete-member-btn" data-member-id="{{ member.id }}" data-member-name="{{ member.get_full_name|default:member.username }}">
+                                                    <i class="fas fa-trash"></i> ลบ
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center">ไม่พบสมาชิก</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Results info -->
+                        <div class="text-muted small mt-3">
+                            แสดง {{ members.count }} จาก {{ total_members }} คน
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info text-center py-5 mb-0">
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="position: absolute; top: 1rem; right: 1rem;"></button>
+                            <i class="fas fa-search fa-3x mb-3"></i>
+                            <h5>ไม่พบสมาชิก</h5>
+                            <p class="text-muted">ลองปรับการค้นหาหรือตัวกรองของคุณ</p>
+                            <a href="{% url 'library:member_list' %}" class="btn btn-primary mt-3">
+                                <i class="fas fa-redo"></i> ล้างตัวกรอง
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Member Detail Modals -->
+{% for member in members %}
+<div class="modal fade" id="memberModal{{ member.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-user"></i> {{ member.get_full_name|default:member.username }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">รหัสนักเรียน</label>
+                    <p class="form-control-plaintext">{{ member.username }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">ชื่อ-นามสกุล</label>
+                    <p class="form-control-plaintext">{{ member.get_full_name|default:"ไม่ได้ระบุ" }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">อีเมล</label>
+                    <p class="form-control-plaintext">{{ member.email|default:"ไม่ได้ระบุ" }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">เป็นสมาชิกตั้งแต่</label>
+                    <p class="form-control-plaintext">{{ member.date_joined|date:"d M Y, H:i" }}</p>
+                </div>
+                <div class="alert alert-info small mb-0">
+                    <i class="fas fa-info-circle"></i> สมาชิกรายนี้เป็นนักเรียนทั่วไปที่มีสิทธิ์เข้าใช้ห้องสมุด
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> ปิด
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Add Member Modal -->
+<div class="modal fade" id="addMemberModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-user-plus"></i> เพิ่มสมาชิกใหม่
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMemberForm">
+                    <div class="mb-3">
+                        <label for="studentId" class="form-label fw-bold">รหัสนักเรียน <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="studentId" placeholder="เช่น 6621393" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="firstName" class="form-label fw-bold">ชื่อ</label>
+                        <input type="text" class="form-control" id="firstName" placeholder="ชื่อ">
+                    </div>
+                    <div class="mb-3">
+                        <label for="lastName" class="form-label fw-bold">นามสกุล</label>
+                        <input type="text" class="form-control" id="lastName" placeholder="นามสกุล">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-bold">อีเมล</label>
+                        <input type="email" class="form-control" id="email" placeholder="student@school.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-bold">รหัสผ่าน <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="password" placeholder="กรอกรหัสผ่าน" required>
+                        <small class="text-muted">แนะนำให้ใช้อย่างน้อย 8 ตัวอักษร</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> ยกเลิก
+                </button>
+                <button type="button" class="btn btn-success" id="createMemberBtn">
+                    <i class="fas fa-check"></i> สร้างสมาชิก
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Member Confirmation Modal -->
+<div class="modal fade" id="deleteMemberModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-warning"></i> ลบสมาชิก
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>คุณต้องการลบสมาชิก <strong id="deleteMemberName"></strong> ออกจากห้องสมุดหรือไม่?</p>
+                <p class="text-muted small">การกระทำนี้จะลบบัญชีสมาชิกและไม่สามารถยกเลิกได้</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> ยกเลิก
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteMemberBtn">
+                    <i class="fas fa-trash"></i> ลบ Member
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.45rem 0.65rem;
+    }
+
+    .rounded-lg {
+        border-radius: 0.5rem;
+    }
+</style>
+
+<script>
+    function getCSRFToken() {
+        let token = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (token) {
+            return token.value;
+        }
+        
+        token = document.querySelector('meta[name="csrf-token"]');
+        if (token) {
+            return token.getAttribute('content');
+        }
+        
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle create member
+        const createMemberBtn = document.getElementById('createMemberBtn');
+        if (createMemberBtn) {
+            createMemberBtn.addEventListener('click', function() {
+                const studentId = document.getElementById('studentId').value.trim();
+                const firstName = document.getElementById('firstName').value.trim();
+                const lastName = document.getElementById('lastName').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value.trim();
+
+                if (!studentId || !password) {
+                    alert('กรุณากรอกรหัสนักเรียนและรหัสผ่าน');
+                    return;
+                }
+
+                const csrfToken = getCSRFToken();
+                
+                fetch('/api/create-member/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        username: studentId,
+                        first_name: firstName,
+                        last_name: lastName,
+                        email: email,
+                        password: password
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                        alertDiv.style.zIndex = '9999';
+                        alertDiv.innerHTML = `
+                            <i class="fas fa-check-circle"></i> ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        `;
+                        document.body.appendChild(alertDiv);
+
+                        // Clear form
+                        document.getElementById('addMemberForm').reset();
+
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addMemberModal'));
+                        if (modal) {
+                            modal.hide();
+                        }
+
+                        // Reload page after 1.5 seconds
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error creating member: ' + error.message);
+                });
+            });
+        }
+
+        // Handle delete member button
+        const deleteButtons = document.querySelectorAll('.delete-member-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const memberId = this.getAttribute('data-member-id');
+                const memberName = this.getAttribute('data-member-name');
+
+                document.getElementById('deleteMemberName').textContent = memberName;
+
+                const modal = new bootstrap.Modal(document.getElementById('deleteMemberModal'));
+                modal.show();
+
+                // Store member ID for confirmation
+                const confirmBtn = document.getElementById('confirmDeleteMemberBtn');
+                confirmBtn.onclick = function() {
+                    deleteMember(memberId);
+                };
+            });
+        });
+    });
+
+    function deleteMember(memberId) {
+        const csrfToken = getCSRFToken();
+        
+        fetch(`/api/delete-member/${memberId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                alertDiv.style.zIndex = '9999';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-check-circle"></i> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(alertDiv);
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteMemberModal'));
+                if (modal) {
+                    modal.hide();
+                }
+
+                // Reload page after 1.5 seconds
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting member: ' + error.message);
+        });
+    }
+</script>
+{% endblock %}

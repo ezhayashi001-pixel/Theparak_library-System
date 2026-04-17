@@ -1,0 +1,196 @@
+{% extends "library/base.html" %}
+
+{% block title %}ใบเสร็จการชำระค่าปรับ - ห้องสมุดเทพารักษ์{% endblock %}
+
+{% block content %}
+<div class="container-lg py-5">
+    <!-- Receipt Container -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0" id="receipt">
+                <!-- Receipt Header -->
+                <div class="card-header bg-danger text-white text-center py-4">
+                    <h2 class="mb-0"><i class="fas fa-exclamation-triangle"></i> ใบเสร็จการชำระค่าปรับ</h2>
+                    <p class="text-white-50 mt-2">ระบบจัดการห้องสมุดดิจิทัลเทพารักษ์</p>
+                </div>
+
+                <div class="card-body p-5">
+                    <!-- Library Info -->
+                    <div class="text-center mb-4">
+                        <h5 class="fw-bold">ห้องสมุดเทพารักษ์</h5>
+                        <p class="text-muted">ระบบห้องสมุดดิจิทัลโรงเรียนเทพารักษ์</p>
+                        <hr>
+                    </div>
+
+                    <!-- Receipt Details -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>วันที่ออกใบเสร็จ:</strong><br>
+                            {{ current_date|date:"d M Y, H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>หมายเลขใบเสร็จ:</strong><br>
+                            #RCP-{{ borrowing.id }}-{{ current_date|date:"YmdHis" }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Student Info -->
+                    <div class="bg-light p-3 rounded mb-4">
+                        <h6 class="fw-bold mb-3">ข้อมูลนักเรียน</h6>
+                        <p class="mb-1"><strong>ชื่อ:</strong> {{ borrowing.student.get_full_name|default:borrowing.student.username }}</p>
+                        <p class="mb-1"><strong>รหัสนักเรียน:</strong> {{ borrowing.student.username }}</p>
+                        <p class="mb-0"><strong>อีเมล:</strong> {{ borrowing.student.email }}</p>
+                    </div>
+
+                    <!-- Book Info -->
+                    <div class="bg-light p-3 rounded mb-4">
+                        <h6 class="fw-bold mb-3">ข้อมูลหนังสือ</h6>
+                        <p class="mb-1"><strong>ชื่อเรื่อง:</strong> {{ borrowing.book.title }}</p>
+                        <p class="mb-1"><strong>หมวดหมู่:</strong> {{ borrowing.book.category.name }}</p>
+                        <p class="mb-0"><strong>ผู้แต่ง:</strong>
+                            {% for author in borrowing.book.authors.all %}
+                                {{ author.first_name }} {{ author.last_name }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                ไม่ทราบ
+                            {% endfor %}
+                        </p>
+                    </div>
+
+                    <!-- Borrowing Dates -->
+                    <div class="bg-light p-3 rounded mb-4">
+                        <h6 class="fw-bold mb-3">วันที่ยืมหนังสือ</h6>
+                        <p class="mb-1"><strong>วันที่ยืม:</strong> {{ borrowing.borrow_date|date:"d M Y, H:i" }}</p>
+                        <p class="mb-1"><strong>วันครบกำหนด:</strong> {{ borrowing.due_date|date:"d M Y, H:i" }}</p>
+                        <p class="mb-0"><strong>จำนวนวันที่ยืม:</strong> {{ days_borrowed }} วัน</p>
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div class="bg-danger bg-opacity-10 p-3 rounded mb-4 border border-danger">
+                        <h6 class="fw-bold mb-2"><i class="fas fa-money-bill-wave"></i> จำนวนเงินที่ต้องชำระ</h6>
+                        <p class="mb-0"><span class="text-danger fs-5 fw-bold">฿{{ penalty }}</span></p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="text-center pt-3 border-top">
+                        <p class="text-muted small mb-2">นี่คือใบเสร็จอย่างเป็นทางการจากห้องสมุดเทพารักษ์</p>
+                        <p class="text-muted small mb-3">กรุณาเก็บใบเสร็จนี้ไว้เป็นหลักฐาน</p>
+                        
+                        <!-- Print & Download Buttons -->
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-primary" onclick="window.print();">
+                                <i class="fas fa-print"></i> พิมพ์ใบเสร็จ
+                            </button>
+                            <button class="btn btn-secondary" onclick="window.history.back();">
+                                <i class="fas fa-arrow-left"></i> กลับไป
+                            </button>
+                        </div>
+                        <div class="mt-4 text-center">
+                            <button type="button" class="btn btn-success btn-lg px-5 shadow-sm" data-bs-toggle="modal" data-bs-target="#confirmPaymentModal">
+                                <i class="fas fa-check-circle me-2"></i> ยืนยันการชำระเงิน
+                            </button>
+                        </div>
+
+                        <div class="modal fade" id="confirmPaymentModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow">
+                                    <div class="modal-header border-0">
+                                        <h5 class="modal-title fw-bold" id="confirmModalLabel">ยืนยันสถานะชำระเงิน</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-center py-4">
+                                        <div class="mb-3">
+                                            <i class="fas fa-hand-holding-usd fa-3x text-success"></i>
+                                        </div>
+                                        <p class="mb-1">คุณต้องการยืนยันว่านักเรียนรหัส <strong>{{ borrowing.student.username }}</strong></p>
+                                        <p>ได้ชำระเงินจำนวน <span class="text-success fw-bold">฿{{ penalty }}</span> ครบถ้วนแล้วใช่หรือไม่?</p>
+                                    </div>
+                                    <div class="modal-footer border-0 justify-content-center">
+                                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                                        
+                                        <form action="{% url 'library:confirm_payment' borrowing.id %}" method="POST">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="amount" value="{{ penalty }}">
+                                            <button type="submit" class="btn btn-success px-4">ใช่, ยืนยันการชำระ</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print Styles -->
+<style>
+    @media print {
+        * {
+            background: transparent !important;
+            color: #000 !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+        }
+        
+        body {
+            background-image: none !important;
+            background-color: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        html {
+            background: white !important;
+            background-image: none !important;
+        }
+        
+        .navbar, .btn, .btn-group {
+            display: none !important;
+        }
+        
+        .card {
+            box-shadow: none !important;
+            border: 1px solid #000 !important;
+            page-break-inside: avoid;
+        }
+        
+        .container-lg {
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        .row {
+            margin: 0 !important;
+        }
+        
+        .col-md-8 {
+            flex: 0 0 100% !important;
+            padding: 0 !important;
+        }
+        
+        .card-body {
+            color: #000 !important;
+        }
+        
+        .bg-light {
+            background-color: #f8f9fa !important;
+        }
+        
+        .bg-danger {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+        
+        .text-white {
+            color: white !important;
+        }
+        
+        .card-header {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+    }
+</style>
+{% endblock %}

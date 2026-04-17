@@ -1,0 +1,155 @@
+﻿{% extends "library/base.html" %}
+
+{% block title %}โปรไฟล์ของฉัน - Theparak Library{% endblock %}
+
+{% block content %}
+<div class="container-lg py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <!-- Profile Card -->
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-gradient text-white p-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user-circle fa-4x me-3"></i>
+                        <div>
+                            <h3 class="mb-0 fw-bold">โปรไฟล์ของฉัน</h3>
+                            <p class="mb-0 small">{{ user.username }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Username -->
+                    <div class="profile-item mb-4">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-3">
+                            <div>
+                                <p class="text-muted small mb-1">
+                                    <i class="fas fa-at"></i> ชื่อผู้ใช้
+                                </p>
+                                <h5 class="mb-0 fw-bold">{{ user.username }}</h5>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" disabled>
+                                <i class="fas fa-lock"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- First Name -->
+                    <div class="profile-item mb-4">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-3">
+                            <div>
+                                <p class="text-muted small mb-1">
+                                    <i class="fas fa-user"></i> ชื่อ
+                                </p>
+                                <h5 class="mb-0 fw-bold">
+                                    {% if user.first_name %}
+                                        {{ user.first_name }}
+                                    {% else %}
+                                        <span class="text-muted">ไม่ได้ระบุ</span>
+                                    {% endif %}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="profile-item mb-4">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-3">
+                            <div>
+                                <p class="text-muted small mb-1">
+                                    <i class="fas fa-user"></i> นามสกุล
+                                </p>
+                                <h5 class="mb-0 fw-bold">
+                                    {% if user.last_name %}
+                                        {{ user.last_name }}
+                                    {% else %}
+                                        <span class="text-muted">ไม่ได้ระบุ</span>
+                                    {% endif %}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="profile-item mb-4">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-3">
+                            <div>
+                                <p class="text-muted small mb-1">
+                                    <i class="fas fa-envelope"></i> ที่อยู่อีเมล
+                                </p>
+                                <h5 class="mb-0 fw-bold">
+                                    {% if user.email %}
+                                        <a href="mailto:{{ user.email }}" class="text-decoration-none">
+                                            {{ user.email }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">ไม่ได้ระบุอีเมล</span>
+                                    {% endif %}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Status -->
+                    <div class="profile-item mb-4">
+                        <div class="border-bottom pb-3">
+                            <p class="text-muted small mb-1">
+                                <i class="fas fa-info-circle"></i> สถานะบัญชี
+                            </p>
+                            <div>
+                                {% if user.is_superuser %}
+                                    <span class="badge bg-danger me-2">
+                                        <i class="fas fa-crown"></i> ผู้ดูแลระบบ
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success me-2">
+                                        <i class="fas fa-student"></i> นักเรียน
+                                    </span>
+                                {% endif %}
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle"></i> ใช้งานอยู่
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times-circle"></i> ปิดใช้งาน
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Member Since -->
+                    <div class="profile-item">
+                        <p class="text-muted small mb-1">
+                            <i class="fas fa-calendar"></i> เป็นสมาชิกตั้งแต่
+                        </p>
+                        <h5 class="mb-0 fw-bold">{{ user.date_joined|date:"M d, Y" }}</h5>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light p-4 border-top">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'library:index' %}" class="btn btn-primary">
+                            <i class="fas fa-home"></i> กลับหน้าหลัก
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="card mt-4 bg-light border-0">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3 text-primary">
+                        <i class="fas fa-lightbulb"></i> ข้อมูลโปรไฟล์
+                    </h6>
+                    <p class="small mb-0">
+                        This is your Theparak Library account profile. More features like editing your profile 
+                        and viewing borrowing history will be available soon!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
